@@ -5,6 +5,7 @@ import time
 import cv2
 import numpy as np
 import pandas as pd
+import requests
 from ultralytics import YOLO
 from ultralytics.utils.plotting import colors
 
@@ -18,7 +19,7 @@ class TrafficMonitoringSystem:
             model_path (str): Path to the YOLO model file.
         """
         self.model = YOLO(model_path)
-        self.model.to('cuda')
+        self.model.to('cuda') # Run object detection on GPU for best performance
         print(self.model.device)
         self.detected_vehicles = set()  # Set of detected vehicles
         self.track_history = {}  # History of vehicle tracking
@@ -26,6 +27,46 @@ class TrafficMonitoringSystem:
         self.distance = 17 # Distance between lines
         self.green_line_y = 480 # First line where speed tracking starts
         self.red_line_y = 1145 # Second line where speed tracking ends
+
+        # Weather API settings
+        self.api_key = "72941658a608f57aa0e9f6c962e49d5e"
+        self.city = "Liverpool"
+        self.weather_data = {"weather_condition": "Unknown", "last_updated": None}
+        self.weather_update_interval = 600  # Update weather every 10 minutes (in seconds)
+
+    def _get_weather_condition(self):
+        """
+        Get current weather condition from OpenWeatherMap API.
+        
+        Returns:
+            str: Current weather condition (e.g., 'Clear', 'Clouds', 'Rain').
+        """
+        # Check if we need to update weather data
+        current_time = time.time()
+        if (self.weather_data["last_updated"] is None or 
+            current_time - self.weather_data["last_updated"] > self.weather_update_interval):
+            
+            if not self.api_key:
+                return "Weather API key not set"
+                
+            try:
+                url = f"https://api.openweathermap.org/data/2.5/weather?q={self.city}&appid={self.api_key}"
+                response = requests.get(url)
+                data = response.json()
+                
+                if response.status_code == 200:
+                    weather_condition = data['weather'][0]['main']
+                    self.weather_data = {
+                        "weather_condition": weather_condition,
+                        "last_updated": current_time
+                    }
+                    return weather_condition
+                else:
+                    return f"API Error: {data.get('message', 'Unknown error')}"
+            except Exception as e:
+                return f"Error: {str(e)}"  
+
+        return self.weather_data["weather_condition"]
 
     def _convert_image_to_base64(self, image):
         """
@@ -93,17 +134,25 @@ class TrafficMonitoringSystem:
         Returns:
             dict: A dictionary containing details of detected vehicles, the annotated frame in base64, and the original frame in base64.
         """
+
+        weather_condition = self._get_weather_condition()
+
         response = {
             "number_of_vehicles_detected": 0,  # Count of detected vehicles in this frame
             "detected_vehicles": [],  # List of detected vehicle details
             "annotated_frame_base64": None,  # Base64-encoded annotated frame
-            "original_frame_base64": None  # Base64-encoded original frame
+            "original_frame_base64": None,  # Base64-encoded original frame
+            "weather_condition": weather_condition  # Current weather condition
         }
 
         # Draw start speed estimation line on screen
         cv2.line(frame,(self.green_line_y,380), (620,710),(0, 255, 0),6)
         # Draw end speed estiamtion line on screen
         cv2.line(frame,(self.red_line_y,370), (1435,700),(0, 0, 255),6)
+
+        
+        # Add weather info to frame
+        cv2.putText(frame, f"Weather: {weather_condition}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         current_time = time.time()
 
