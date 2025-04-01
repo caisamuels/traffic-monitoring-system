@@ -1,6 +1,7 @@
 import base64
 from collections import defaultdict
 from datetime import datetime
+import os
 import time
 import cv2
 import numpy as np
@@ -8,6 +9,10 @@ import pandas as pd
 import requests
 from ultralytics import YOLO
 from ultralytics.utils.plotting import colors
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class TrafficMonitoringSystem:
 
@@ -29,8 +34,8 @@ class TrafficMonitoringSystem:
         self.red_line_y = 1138 # Second line where speed tracking ends
 
         # Weather API settings
-        self.api_key = "72941658a608f57aa0e9f6c962e49d5e"
-        self.city = "Liverpool"
+        self.api_key = os.getenv("WEATHER_API_KEY")
+        self.city = os.getenv("WEATHER_CITY")
         self.weather_data = {"weather_condition": "Unknown", "last_updated": None}
         self.weather_update_interval = 600  # Update weather every 10 minutes (in seconds)
 

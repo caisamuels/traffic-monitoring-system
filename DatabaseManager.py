@@ -1,25 +1,31 @@
 from pymongo import MongoClient
 import threading
 from queue import Queue, Empty
+from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class DatabaseManager:
     """
     Manages database operations for the traffic monitoring system using a separate worker thread.
     """
     
-    def __init__(self, connection_string="mongodb://localhost:27017/", database_name="trafficMonitoring", collection_name="vehicles"):
+    def __init__(self):
         """
-        Initialize the DatabaseManager.
+        Initialize the DatabaseManager using only environment variables.
+        """
+        # Get configuration from environment variables
+        self.connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+        self.database_name = os.getenv("MONGODB_DATABASE_NAME")
+        self.collection_name = os.getenv("MONGODB_COLLECTION_NAME")
         
-        Args:
-            connection_string (str): MongoDB connection string
-            database_name (str): Name of the database
-            collection_name (str): Name of the collection
-        """
         # MongoDB connection
-        self.client = MongoClient(connection_string)
-        self.db = self.client[database_name]
-        self.collection = self.db[collection_name]
+        self.client = MongoClient(self.connection_string)
+        self.db = self.client[self.database_name]
+        self.collection = self.db[self.collection_name]
         
         # Queue for database operations
         self.db_queue = Queue()
