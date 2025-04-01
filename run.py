@@ -4,9 +4,9 @@ import threading
 from queue import Queue, Empty
 from TrafficMonitoringSystem import TrafficMonitoringSystem
 
-video_path = "rtsp://150.204.195.58:8554/cam"
+video_path = "rtsp://127.0.0.1:8554/"
 
-end_time = time(17, 00) # The time for the script to terminate
+end_time = time(19, 00) # The time for the script to terminate
 
 connection_string="mongodb://localhost:27017/"
 database_name="trafficMonitoring"
