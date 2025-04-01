@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import datetime, time
 from pymongo import MongoClient
+import threading
+from queue import Queue, Empty
 from TrafficMonitoringSystem import TrafficMonitoringSystem
 
 video_path = "rtsp://150.204.195.58:8554/cam"
+
+end_time = time(17, 00) # The time for the script to terminate
 
 connection_string="mongodb://localhost:27017/"
 database_name="trafficMonitoring"
@@ -21,15 +25,48 @@ session_stats = {
     "last_weather": "Unknown"
 }
 
+# Create a queue for database operations
+db_queue = Queue()
+
+# Flag to signal the worker thread to terminate
+terminate_worker = False
+
+def db_worker():
+    """Worker thread function that processes database operations from the queue."""
+    while not terminate_worker:
+        try:
+            # Get the next vehicle document from the queue with a timeout
+            # This allows the thread to check the terminate flag periodically
+            vehicle_doc = db_queue.get(timeout=1.0)
+            
+            # Insert the vehicle into MongoDB
+            collection.insert_one(vehicle_doc)
+            
+            # Mark the task as done
+            db_queue.task_done()
+        except Empty:
+            # Timeout occurred, just continue to check the terminate flag
+            continue
+
+# Start the worker thread
+db_thread = threading.Thread(target=db_worker, daemon=True)
+db_thread.start()
+
 def result_callback(result):
+    current_time = datetime.now().time()
+    # Terminate script at specified time
+    if current_time >= end_time:
+        print("\n" + "=" * 50)
+        print("  SCHEDULED TERMINATION TIME REACHED")
+        print("=" * 50)
+        exit(0)  # Terminate the script
     # Update weather status for summary display
     session_stats["last_weather"] = result["weather_condition"]
     
-    # Save each vehicle to MongoDB
+    # Process each detected vehicle
     for vehicle in result['detected_vehicles']:
         # Create a document to store in MongoDB
         vehicle_doc = {
-            "vehicle_id": vehicle["vehicle_id"],
             "vehicle_type": vehicle["vehicle_type"],
             "detection_confidence": vehicle["detection_confidence"],
             "timestamp": vehicle["timestamp"],
@@ -45,8 +82,8 @@ def result_callback(result):
         else:
             session_stats["vehicles_by_type"][vehicle_type] = 1
         
-        # Insert the vehicle into MongoDB
-        collection.insert_one(vehicle_doc)
+        # Put the vehicle document in the queue for the worker thread to process
+        db_queue.put(vehicle_doc)
         
         # Clear the console (works on most terminals)
         print("\033c", end="")
@@ -71,5 +108,13 @@ def result_callback(result):
         print(f"  Confidence: {vehicle['detection_confidence']:.2f}")
         print("=" * 50)
 
-# Start processing the video
-vehicle_detection.process_video(video_path, result_callback)
+try:
+    # Start processing the video
+    vehicle_detection.process_video(video_path, result_callback)
+finally:
+    # Signal the worker thread to terminate and wait for it to finish
+    terminate_worker = True
+    db_thread.join(timeout=5.0)
+    
+    # Wait for any remaining database operations to complete
+    db_queue.join()

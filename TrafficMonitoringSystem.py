@@ -25,8 +25,8 @@ class TrafficMonitoringSystem:
         self.track_history = {}  # History of vehicle tracking
         self.vehicle_timestamps = {}  # Keep track of timestamps for each tracked vehicle
         self.distance = 17 # Distance between lines
-        self.green_line_y = 480 # First line where speed tracking starts
-        self.red_line_y = 1145 # Second line where speed tracking ends
+        self.green_line_y = 468 # First line where speed tracking starts
+        self.red_line_y = 1138 # Second line where speed tracking ends
 
         # Weather API settings
         self.api_key = "72941658a608f57aa0e9f6c962e49d5e"
@@ -146,9 +146,9 @@ class TrafficMonitoringSystem:
         }
 
         # Draw start speed estimation line on screen
-        cv2.line(frame,(self.green_line_y,380), (620,710),(0, 255, 0),6)
+        cv2.line(frame,(self.green_line_y,369), (617,691),(0, 255, 0),6)
         # Draw end speed estiamtion line on screen
-        cv2.line(frame,(self.red_line_y,370), (1435,700),(0, 0, 255),6)
+        cv2.line(frame,(self.red_line_y,340), (1424,645),(0, 0, 255),6)
 
         
         # Add weather info to frame
