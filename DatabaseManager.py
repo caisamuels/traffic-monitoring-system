@@ -19,8 +19,14 @@ class DatabaseManager:
         """
         # Get configuration from environment variables
         self.connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+        if not self.connection_string:
+            raise ValueError("MONGODB_CONNECTION_STRING environment variable is required")
         self.database_name = os.getenv("MONGODB_DATABASE_NAME")
+        if not self.database_name:
+            raise ValueError("MONGODB_DATABASE_NAME environment variable is required")
         self.collection_name = os.getenv("MONGODB_COLLECTION_NAME")
+        if not self.collection_name:
+            raise ValueError("MONGODB_COLLECTION_NAME environment variable is required")
         
         # MongoDB connection
         self.client = MongoClient(self.connection_string)
@@ -79,3 +85,6 @@ class DatabaseManager:
         
         # Wait for any remaining database operations to complete
         self.db_queue.join()
+
+        # Close the MongoDB client connection
+        self.client.close()
