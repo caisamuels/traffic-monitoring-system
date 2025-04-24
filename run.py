@@ -1,7 +1,6 @@
 from datetime import datetime, time
 from TrafficMonitoringSystem import TrafficMonitoringSystem
 from DatabaseManager import DatabaseManager
-import os
 from dotenv import load_dotenv
 
 # Load environment variables

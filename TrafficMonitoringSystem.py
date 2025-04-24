@@ -25,9 +25,6 @@ class TrafficMonitoringSystem:
         """
         self.model = YOLO(model_path)
         self.model.to('cuda') # Run object detection on GPU for best performance
-        print(self.model.device)
-        self.detected_vehicles = set()  # Set of detected vehicles
-        self.track_history = {}  # History of vehicle tracking
         self.vehicle_timestamps = {}  # Keep track of timestamps for each tracked vehicle
         self.distance = 17 # Distance between lines
         self.green_line_y = 468 # First line where speed tracking starts
@@ -191,7 +188,6 @@ class TrafficMonitoringSystem:
                     start_time = self.vehicle_timestamps[track_id]["start"]
                     end_time = self.vehicle_timestamps[track_id]["end"]
                     speed = self._calculate_speed(start_time, end_time)
-
                 
                     response["detected_vehicles"].append({
                         "vehicle_id": track_id,
@@ -227,8 +223,6 @@ class TrafficMonitoringSystem:
         while cap.isOpened():
             success, frame = cap.read()
             if success:
-                # frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
-                # print(f"Frame rate: {frame_rate} FPS")
                 timestamp = datetime.now()
                 response = self.process_frame(frame, timestamp)
                 if 'annotated_frame_base64' in response:
