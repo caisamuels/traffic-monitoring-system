@@ -1,11 +1,9 @@
 import base64
-from collections import defaultdict
 from datetime import datetime
 import os
 import time
 import cv2
 import numpy as np
-import pandas as pd
 import requests
 from ultralytics import YOLO
 from ultralytics.utils.plotting import colors
